@@ -1,4 +1,4 @@
-## Copyright (C) 2008-2011 Dirk-Jan C. Binnema <djcb@djcbsoftware.nl>
+## Copyright (C) 2008-2012 Dirk-Jan C. Binnema <djcb@djcbsoftware.nl>
 ##
 ## This program is free software; you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -16,71 +16,39 @@
 
 include $(top_srcdir)/gtest.mk
 
-if BUILD_GUILE
-guile=guile
-else
-guile=
-endif
+SUBDIRS=
 
-if BUILD_MU4E
-mu4e=mu4e
-else
-mu4e=
-endif
+info_TEXINFOS=mu4e.texi
+mu4e_TEXINFOS=fdl.texi
 
-SUBDIRS=m4 man lib $(guile) mu $(mu4e) contrib toys
+lispdir=${prefix}/share/emacs/site-lisp/mu4e/
 
-ACLOCAL_AMFLAGS=-I m4
+dist_lisp_LISP=			\
+	mu4e-about.el		\
+	mu4e-actions.el		\
+	mu4e-compose.el		\
+	mu4e-headers.el		\
+	mu4e-main.el		\
+	mu4e-mark.el		\
+	mu4e-meta.el		\
+	mu4e-proc.el		\
+	mu4e-speedbar.el	\
+	mu4e-utils.el		\
+	mu4e-vars.el		\
+	mu4e-view.el		\
+	mu4e.el			\
+	org-mu4e.el
 
-# so we can say 'make test'
-check: test cleanupnote
+# BUILT_SOURCES=			\
+# 	mu4e-about.el
 
-cleanupnote:
-	@echo -e  "\nNote: you can remove the mu-test-<uid> dir in your tempdir"
-	@echo "after 'make check' has finished."
+mu4e-about.el: mu4e-about.org
+	@echo ";; auto-generated"           >   mu4e-about.el
+	@echo "(defconst mu4e-about \""     >>  mu4e-about.el
+	@sed 's/"/\\"/g' < mu4e-about.org   >>  mu4e-about.el
+	@echo "\" \"About mu4e.\")"         >>  mu4e-about.el
+	@echo "(provide 'mu4e-about)"       >>  mu4e-about.el
 
-tags:
-	gtags
+EXTRA_DIST=$(elisp_DATA) mu4e-about.org
 
-# this warns about function that have a cyclomatic complexity of > 10,
-# which is a sign that it needs some refactoring. requires the pmccabe
-# tool. If all is fine, it outputs nothing
-cc10:
-	@$(PMCCABE) `find -name '*.c' -o -name '*.cc'`		\
-	| grep -v mu-str-normalize.c				\
-	| grep -v mu_str_subject_normalize			\
-	| grep -v tests						\
-	| sort -nr | awk '($$1 > 10)'
-
-# this warns about functions that are over 35 non-comment lines long, which is a
-# sign that they need some refactoring. requires the pmccabe tool. if
-# all is fine, it outputs nothing
-# note, some functions are  exempted from this rule.
-line35:
-	@$(PMCCABE) -c `find -name '*.c' -o -name '*.cc'`	\
-	 | grep -v mu-str-normalize.c				\
-	 | grep -v mu_str_subject_normalize			\
-	 | grep -v config_options_group_find			\
-	 | grep -v SCM_DEFINE					\
-	 | grep -v tests					\
-         | awk '($$5 > 35)'
-
-# get all todo/fixme messages
-fixme:
-	@grep -i 'FIXME\|TODO' `find src -type f`
-
-# check whether we can run make distcheck from the repo version
-gitcheck:
-	cd `mktemp -d`;				 \
-	git clone git://github.com/djcb/mu.git ; \
-	cd mu;					 \
-	autoreconf -i ;				 \
-	./configure ;				 \
-	make distcheck
-
-EXTRA_DIST=		\
-	TODO		\
-	HACKING		\
-	gtest.mk	\
-	NEWS		\
-	autogen.sh
+CLEANFILES=*.elc ${BUILT_SOURCES}
